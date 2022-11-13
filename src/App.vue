@@ -6,14 +6,13 @@ import MOVIES from './assets/movies.json';
 // TIP: when we clone the input array,
 // we can use a map function instead of .slice()
 // and perform data changes if needed!
-const movies = MOVIES
-  .map(movie => {
-    // Object.assign into a new object ({}) is the way to clone objects in JS (sorry about that!)
-    return Object.assign({}, movie, {
-      score: Number(movie.score),
-      // HINT: we can normalize here the genre of each movie, for Level 5 of this challenge ;)
-    });
+const movies = MOVIES.map((movie) => {
+  // Object.assign into a new object ({}) is the way to clone objects in JS (sorry about that!)
+  return Object.assign({}, movie, {
+    score: Number(movie.score),
+    // HINT: we can normalize here the genre of each movie, for Level 5 of this challenge ;)
   });
+});
 
 // reactive vars
 const itemsPerPage = ref(5);
@@ -22,7 +21,6 @@ const page = ref(1);
 const filterTitle = ref('');
 const yearFilter = ref([]);
 const genreFilter = ref([]);
-
 
 function goToNext() {
   page.value++;
@@ -38,6 +36,14 @@ function filterByYear(movie) {
   return yearFilter.value.includes(movie.year);
 }
 
+function filterByGenre(movie) {
+  // (yearsSelected.value.length === 0) means no years were selected
+  if (genreFilter.value.length === 0) return true;
+  //const lowerCaseGenre = genreFilter.value.toLowerCase();
+  //return genreFilter.toLowerCase().includes(lowerCaseGenre);
+  return genreFilter.value.includes(movie.genre.toLowerCase());
+}
+
 function filterByTitle(movie) {
   if (filterTitle.value.length < 2) return true;
   const lowerCaseTitle = filterTitle.value.toLowerCase();
@@ -45,10 +51,8 @@ function filterByTitle(movie) {
 }
 
 function avergageScore(list) {
-  const sum = list
-    .map(m => m.score)
-    .reduce((a, b) => a + b, 0);
-  return (sum /list.length) || 0;
+  const sum = list.map((m) => m.score).reduce((a, b) => a + b, 0);
+  return sum / list.length || 0;
 }
 
 const filterMoviesAverageScore = computed(() => {
@@ -66,20 +70,19 @@ const currentPageMoviesAverageScore = computed(() => {
 const filteredMovies = computed(() => {
   const fm = movies
     .filter(filterByYear)
-    .filter(filterByTitle);
-
-    fm.sort((movie1, movie2) => {
-      return movie2.score - movie1.score;
-    })
-    return fm;
+    .filter(filterByTitle)
+    .filter(filterByGenre);
+  fm.sort((movie1, movie2) => {
+    return movie2.score - movie1.score;
+  });
+  return fm;
 });
 
 const moviesSnapshot = computed(() => {
-    return filteredMovies.value
-    .slice(
-      (page.value - 1) * itemsPerPage.value,
-      page.value * itemsPerPage.value
-    );
+  return filteredMovies.value.slice(
+    (page.value - 1) * itemsPerPage.value,
+    page.value * itemsPerPage.value
+  );
 });
 
 const moviesSnapshotYear = computed(() => {
@@ -98,12 +101,12 @@ const moviesSnapshotYear = computed(() => {
 const moviesSnapshotGenre = computed(() => {
   const genresSet = new Set();
   movies.filter((m) => {
-    genresSet.add(m.genre);
+    genresSet.add(m.genre.toLowerCase());
   });
 
   //return movies;
   console.log(genresSet);
-  const gArray = Array.from(genresSet).sort();
+  const gArray = Array.from(genresSet);
   console.log(gArray);
   return gArray;
 });
@@ -122,42 +125,25 @@ watch(filterTitle, (newValue) => {
     page.value = 1;
   }
 });
-
 </script>
 
 <template>
-  <input type="number" v-model="itemsPerPage" /> <br/>
-  filter avergage score: {{ filterMoviesAverageScore }}<br/>
-  current page avg score: {{currentPageMoviesAverageScore}}<br/>
-  total avg score: {{ totalAverageScore }}<br/>
+  <input type="number" v-model="itemsPerPage" /> <br />
+  filter avergage score: {{ filterMoviesAverageScore }}<br />
+  current page avg score: {{ currentPageMoviesAverageScore }}<br />
+  total avg score: {{ totalAverageScore }}<br />
   <ul>
-    <li
-      v-for="movie in moviesSnapshot"
-      :key="movie.id"
-    >
-      {{ movie.title }} || {{ movie.year }} || {{ movie.score }}
+    <li v-for="movie in moviesSnapshot" :key="movie.id">
+      {{ movie.title }} || {{ movie.year }} || {{ movie.score }} ||
+      {{ movie.genre }}
     </li>
   </ul>
   <h3>Pagination Controls</h3>
-  <MyButton
-    :disabled="page === 1"
-    @click="page = 1">
-    first page
-  </MyButton>
-  <MyButton
-    :disabled="page === 1"
-    @click="goToPrev">
-    &lt;
-  </MyButton>
+  <MyButton :disabled="page === 1" @click="page = 1"> first page </MyButton>
+  <MyButton :disabled="page === 1" @click="goToPrev"> &lt; </MyButton>
   {{ page }} / {{ totalPages }}
-  <MyButton
-  :disabled="page === totalPages"
-  @click="goToNext">
-    &gt;
-  </MyButton>
-  <MyButton
-    :disabled="page === totalPages"
-    @click="page = totalPages">
+  <MyButton :disabled="page === totalPages" @click="goToNext"> &gt; </MyButton>
+  <MyButton :disabled="page === totalPages" @click="page = totalPages">
     last page
   </MyButton>
 
@@ -165,19 +151,15 @@ watch(filterTitle, (newValue) => {
   <h3>Filters</h3>
   <input v-model="filterTitle" type="text" />
   <p>year filter{{ yearFilter }}</p>
-  <br/><br/>
+  <br /><br />
   <select name="" id="" v-model="yearFilter" multiple>
-    <option
-      v-for="year in moviesSnapshotYear"
-    >
+    <option v-for="year in moviesSnapshotYear">
       {{ year }}
     </option>
   </select>
 
   <select name="" id="" v-model="genreFilter" multiple>
-    <option
-      v-for="genre in moviesSnapshotGenre"
-    >
+    <option v-for="genre in moviesSnapshotGenre">
       {{ genre }}
     </option>
   </select>
